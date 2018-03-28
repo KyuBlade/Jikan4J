@@ -10,10 +10,11 @@ buildscript {
 }
 
 group 'com.vinarnt'
-version '0.0.1'
+version '0.1.0'
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
 
@@ -34,4 +35,55 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Jikan4J',
+                'Implementation-Version': version
+    }
+}
+
+javadoc {
+    //disable doclint for JDK8, more quiet output
+    if (JavaVersion.current().isJava8Compatible()){
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes, description: 'Creates a jar from the source files.') {
+    classifier = 'sources'
+    from sourceSets*.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc, description: 'Creates a jar from the javadoc files.') {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+ext {
+    deployUrl = project.hasProperty('deployUrl') ? project.getProperty('deployUrl') : ''
+    deployUsername = project.hasProperty('deployUsername') ? project.getProperty('deployUsername') : ''
+    deployPassword = project.hasProperty('deployPassword') ? project.getProperty('deployPassword') : ''
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            artifact jar
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+    repositories {
+        maven {
+            name "deploy"
+            url deployUrl
+            credentials {
+                username = deployUsername
+                password = deployPassword
+            }
+        }
+    }
 }
